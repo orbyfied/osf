@@ -1,0 +1,70 @@
+// project properties
+group rootProject.group
+
+boolean isApp() {
+    return hasProperty("mainClass");
+}
+
+boolean hasTest() {
+    return hasProperty("hasTests") && project.hasTests == true
+}
+
+/*
+    Task Configuration
+ */
+
+tasks {
+    compileJava {
+        options.encoding = "utf8"
+        options.release.set(17) }
+    processResources {
+        filteringCharset = "utf8" }
+    if (plugins.hasPlugin("com.github.johnrengelman.shadow")) {
+        shadowJar {
+            String format = "osf-" + project.name + "+" + project.version + ".jar"
+            outputFile = file("../builds/" + format)
+
+            if (isApp()) {
+                manifest {
+                    attributes(
+                            'Main-Class': 'net.orbyfied.hscsms.client.ClientMain'
+                    )
+                }
+            }
+        }
+    }
+
+    jar {
+        String format = "osf-" + project.name + "+" + project.version + ".jar"
+        outputFile = file("../builds/" + format)
+    }
+}
+
+/*
+    Dependencies
+ */
+
+repositories {
+    // maven central
+    mavenCentral()
+
+    // it didnt work at first
+    // had to include ossrh manually
+    maven {
+        url "https://s01.oss.sonatype.org/content/repositories/releases/"
+    }
+}
+
+dependencies {
+    if (hasTest()) {
+        // test dependencies
+        testImplementation 'org.junit.jupiter:junit-jupiter-api:5.7.0'
+        testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.7.0'
+    }
+}
+
+if (hasTest()) {
+    test {
+        useJUnitPlatform()
+    }
+}

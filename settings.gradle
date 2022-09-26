@@ -1,0 +1,8 @@
+rootProject.name = 'server-framework'
+include 'server-networking'
+include 'server-utils'
+include 'server-db'
+include 'server-resources'
+include 'server-bootstrap-utils'
+include 'server-core'
+

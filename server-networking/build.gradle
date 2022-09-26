@@ -1,0 +1,22 @@
+plugins {
+    id 'java'
+    id 'java-library'
+
+    // for shading in dependencies
+    id "com.github.johnrengelman.shadow" version "7.1.2"
+}
+
+ext {
+    // enable testing
+    hasTests = true
+}
+
+// apply module preset
+apply from: '../buildSrc/module.gradle', to: project
+
+version '0.1.0'
+
+dependencies {
+    // projects
+    api project(":server-utils")
+}

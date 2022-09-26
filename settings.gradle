@@ -4,5 +4,5 @@ include 'server-utils'
 include 'server-db'
 include 'server-resources'
 include 'server-bootstrap-utils'
-include 'server-core'
+include 'server-framework'
 

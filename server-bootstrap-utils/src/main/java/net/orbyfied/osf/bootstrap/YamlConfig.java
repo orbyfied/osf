@@ -36,7 +36,10 @@ public class YamlConfig {
                 Map<String, Object> values = yaml.load(Files.newInputStream(file));
 
                 // load default values
-                Map<String, Object> defaultValues = yaml.load(src.getResourceAsStream(rp));
+                InputStream dIn = src.getResourceAsStream(rp);
+                if (dIn == null)
+                    throw new IllegalArgumentException("Could not open configuration defaults " + rp + " in the JAR of " + src);
+                Map<String, Object> defaultValues = yaml.load(dIn);
 
                 // check (optional) version and
                 // copy absent defaults
@@ -82,8 +85,7 @@ public class YamlConfig {
                 return new Values(vals);
             }
         } catch (Exception e) {
-            e.printStackTrace();
-            return null;
+            throw new RuntimeException(e);
         }
     }
 

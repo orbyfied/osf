@@ -22,5 +22,8 @@ dependencies {
 
     // projects
     api project(":server-utils")
-    api project(":server-core")
+    api project(":server-framework")
+
+    // libraries to include for testing
+    testImplementation 'org.mongodb:mongodb-driver:3.12.11'
 }

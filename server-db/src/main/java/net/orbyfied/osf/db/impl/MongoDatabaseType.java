@@ -8,10 +8,9 @@ import net.orbyfied.osf.db.Database;
 import net.orbyfied.osf.db.DatabaseManager;
 import net.orbyfied.osf.db.DatabaseType;
 import net.orbyfied.osf.db.Login;
-import net.orbyfied.hscsms.service.Logging;
-import net.orbyfied.hscsms.util.Values;
 import net.orbyfied.j8.registry.Identifier;
 import net.orbyfied.j8.util.logging.Logger;
+import net.orbyfied.osf.util.Values;
 
 import java.util.logging.Level;
 
@@ -55,7 +54,7 @@ public class MongoDatabaseType extends DatabaseType<MongoDatabase> {
             logger.ok("Successfully logged in database '" + database.name() + "'");
         } catch (Exception e) {
             logger.err("Error while logging in database '" + database.name() + "'", e);
-            e.printStackTrace(Logging.ERR);
+            e.printStackTrace();
         }
     }
 

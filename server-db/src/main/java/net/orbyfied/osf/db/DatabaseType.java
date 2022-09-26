@@ -1,8 +1,8 @@
 package net.orbyfied.osf.db;
 
 import net.orbyfied.osf.db.impl.MongoDatabaseType;
-import net.orbyfied.hscsms.util.Values;
 import net.orbyfied.j8.registry.Identifier;
+import net.orbyfied.osf.util.Values;
 
 public abstract class DatabaseType<D extends Database> {
 

@@ -1,10 +1,7 @@
 package net.orbyfied.osf.server;
 
 import java.net.SocketAddress;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 public class ServerClientList {
 
@@ -36,6 +33,10 @@ public class ServerClientList {
         clients.remove(client);
         clientsByAddr.remove(client.networkHandler().getSocket().getRemoteSocketAddress(), client);
         return this;
+    }
+
+    public List<ServerClient> list() {
+        return Collections.unmodifiableList(clients);
     }
 
 }

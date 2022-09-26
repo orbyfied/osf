@@ -8,6 +8,8 @@ import net.orbyfied.osf.db.DatabaseManager;
 import net.orbyfied.osf.network.NetworkManager;
 import net.orbyfied.osf.network.handler.UtilityNetworkHandler;
 import net.orbyfied.osf.resource.ServerResourceManager;
+import net.orbyfied.osf.server.common.GeneralProtocolSpec;
+import net.orbyfied.osf.server.common.HandshakeProtocolSpec;
 import net.orbyfied.osf.server.event.ClientConnectEvent;
 import net.orbyfied.osf.server.event.ServerPostStartEvent;
 import net.orbyfied.osf.server.event.ServerPrepareEvent;
@@ -18,6 +20,7 @@ import net.orbyfied.osf.util.Logging;
 import net.orbyfied.osf.util.Values;
 import net.orbyfied.osf.util.Version;
 import net.orbyfied.osf.util.security.AsymmetricEncryptionProfile;
+import net.orbyfied.osf.util.security.SymmetricEncryptionProfile;
 import net.orbyfied.osf.util.worker.SafeWorker;
 
 import java.net.ServerSocket;
@@ -41,9 +44,16 @@ public abstract class Server
     public static final int RSA_KEY_LENGTH = 1024;
     public static final int AES_KEY_LENGTH = 128;
 
-    public static AsymmetricEncryptionProfile newAssymetricEncryptionProfile() {
+    public static AsymmetricEncryptionProfile newAsymmetricEncryptionProfile() {
         return new AsymmetricEncryptionProfile("RSA", "ECB", "PKCS1Padding", "RSA", RSA_KEY_LENGTH);
     }
+
+    public static SymmetricEncryptionProfile newSymmetricEncryptionProfile() {
+        return new SymmetricEncryptionProfile("AES", "ECB", "PKCS5Padding", "AES", AES_KEY_LENGTH);
+    }
+
+    public static final SymmetricEncryptionProfile  EP_SYMMETRIC  = newSymmetricEncryptionProfile();
+    public static final AsymmetricEncryptionProfile EP_ASYMMETRIC = newAsymmetricEncryptionProfile();
 
     // server logger
     protected static final Logger logger = Logging.getLogger("Server");
@@ -60,9 +70,14 @@ public abstract class Server
      */
 
     /**
-     * Internal key: Enable RSA encryption
+     * Internal key: Enable encryption
      */
-    public static final Object K_ENABLE_RSA = new Object();
+    public static final Object K_ENABLE_ENCRYPTED = new Object();
+
+    /**
+     * Internal key: Enforce encryption
+     */
+    public static final Object K_ENFORCE_ENCRYPTED = new Object();
 
     /////////////////////////////////////////
 
@@ -133,6 +148,8 @@ public abstract class Server
         Networking
      */
 
+    // the protocol specifications to load
+    protected final List<ProtocolSpecification> protocolSpecifications = new ArrayList<>();
     // the server socket
     protected ServerSocket serverSocket;
 
@@ -228,6 +245,16 @@ public abstract class Server
         // set logger stage
         logger.stage("Connect");
 
+        // load protocol
+        protocolSpecifications.add(GeneralProtocolSpec.INSTANCE);
+        if (configuration.getOrDefaultFlat(K_ENABLE_ENCRYPTED, true))
+            protocolSpecifications.add(HandshakeProtocolSpec.INSTANCE);
+        for (ProtocolSpecification spec : protocolSpecifications) {
+            spec.apply(networkManager);
+        }
+
+        logger.ok("Loaded protocol consisting of " + protocolSpecifications.size() + " specifications");
+
         // bind socket
         try {
             serverSocket = new ServerSocket();
@@ -245,10 +272,10 @@ public abstract class Server
         utilityNetworkHandler.start();
 
         // create encryption if wanted
-        if (configuration.getOrDefaultFlat(K_ENABLE_RSA, true)) {
+        if (configuration.getOrDefaultFlat(K_ENABLE_ENCRYPTED, true)) {
             try {
                 // create encryption profile
-                rsaEncryptionProfile = newAssymetricEncryptionProfile();
+                rsaEncryptionProfile = newAsymmetricEncryptionProfile();
 
                 // generate keys
                 rsaEncryptionProfile.generateKeys();
@@ -315,6 +342,10 @@ public abstract class Server
                 // register and start client
                 clients.add(client);
                 client.start();
+
+                // prepare procedures
+                if (configuration.getOrDefaultFlat(K_ENABLE_ENCRYPTED, true))
+                    client.initSymmetricEncryptionHandshake();
 
                 // call event
                 eventBus.post(new ClientConnectEvent(this, client));

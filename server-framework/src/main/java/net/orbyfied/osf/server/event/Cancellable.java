@@ -1,9 +1,6 @@
 package net.orbyfied.osf.server.event;
 
-import net.orbyfied.j8.event.pipeline.Event;
-
 import java.util.HashSet;
-import java.util.Map;
 
 /**
  * Weird implementation of a cancellable event

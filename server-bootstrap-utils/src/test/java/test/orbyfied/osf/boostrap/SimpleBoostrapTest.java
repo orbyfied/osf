@@ -5,7 +5,6 @@ import net.orbyfied.osf.server.Server;
 import net.orbyfied.osf.util.Version;
 
 import java.net.InetSocketAddress;
-import java.nio.file.Path;
 
 public class SimpleBoostrapTest {
 

@@ -3,14 +3,17 @@ package net.orbyfied.osf.server;
 import net.orbyfied.j8.event.ComplexEventBus;
 import net.orbyfied.j8.event.EventListener;
 import net.orbyfied.j8.event.util.Pipelines;
-import net.orbyfied.j8.util.logging.Logger;
 import net.orbyfied.osf.db.DatabaseManager;
 import net.orbyfied.osf.network.NetworkManager;
+import net.orbyfied.osf.network.handler.ChainAction;
+import net.orbyfied.osf.network.handler.HandlerResult;
+import net.orbyfied.osf.network.handler.NodeAction;
 import net.orbyfied.osf.network.handler.UtilityNetworkHandler;
 import net.orbyfied.osf.resource.ServerResourceManager;
 import net.orbyfied.osf.server.common.GeneralProtocolSpec;
 import net.orbyfied.osf.server.common.HandshakeProtocolSpec;
-import net.orbyfied.osf.server.event.ClientConnectEvent;
+import net.orbyfied.osf.server.common.protocol.general.PacketUnboundDisconnect;
+import net.orbyfied.osf.server.event.ServerClientConnectEvent;
 import net.orbyfied.osf.server.event.ServerPostStartEvent;
 import net.orbyfied.osf.server.event.ServerPrepareEvent;
 import net.orbyfied.osf.server.event.ServerStopEvent;
@@ -241,7 +244,8 @@ public abstract class Server
             spec.apply(networkManager);
         }
 
-        logger.ok("load_protocol", "Loaded protocol consisting of " + protocolSpecifications.size() + " specifications");
+        logger.newOk("load_protocol", "Loaded protocol consisting of " + protocolSpecifications.size()
+                + " specifications").extra(v -> v.put("specs", protocolSpecifications)).push();
 
         // bind socket
         try {
@@ -330,12 +334,27 @@ public abstract class Server
                 clients.add(client);
                 client.start();
 
+                // prepare disconnection
+                client.networkHandler().node().childForType(PacketUnboundDisconnect.TYPE)
+                        .<PacketUnboundDisconnect>withHandler((handler, node, packet) -> {
+                            // send log
+                            logger.info("client_disconnect", "Client {0} disconnected with message " +
+                                    "'" + packet.getMessage() + "'", client);
+                            // disconnect client
+                            client.destroy();
+
+                            // return
+                            return new HandlerResult(ChainAction.CONTINUE).nodeAction(NodeAction.REMOVE);
+                        });
+
                 // prepare procedures
                 if (configuration.getOrDefaultFlat(K_ENABLE_ENCRYPTED, true))
                     client.initSymmetricEncryptionHandshake();
+                else
+                    client.initRefuseSymmetricEncryptionHandshake();
 
                 // call event
-                eventBus.post(new ClientConnectEvent(this, client));
+                eventBus.post(new ServerClientConnectEvent(this, client));
             } catch (ClientConnectException e) {
                 if ("connect".equals(e.getMessage())) {
                     logger.err("client_connect", e,"Error connecting new client to socket {0}",

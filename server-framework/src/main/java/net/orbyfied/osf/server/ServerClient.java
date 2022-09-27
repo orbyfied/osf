@@ -1,14 +1,16 @@
 package net.orbyfied.osf.server;
 
-import net.orbyfied.j8.util.logging.Logger;
 import net.orbyfied.osf.network.handler.ChainAction;
 import net.orbyfied.osf.network.handler.HandlerResult;
 import net.orbyfied.osf.network.handler.NodeAction;
 import net.orbyfied.osf.network.handler.SocketNetworkHandler;
 import net.orbyfied.osf.server.common.GeneralProtocolSpec;
+import net.orbyfied.osf.server.common.protocol.general.PacketUnboundDisconnect;
 import net.orbyfied.osf.server.common.protocol.handshake.PacketClientboundPubKey;
 import net.orbyfied.osf.server.common.protocol.handshake.PacketServerboundClientKey;
-import net.orbyfied.osf.server.event.ClientReadyEvent;
+import net.orbyfied.osf.server.common.protocol.handshake.PacketUnboundHandshakeStop;
+import net.orbyfied.osf.server.common.protocol.handshake.PacketUnboundVerifyEncryption;
+import net.orbyfied.osf.server.event.ServerClientReadyEvent;
 import net.orbyfied.osf.server.exception.ClientConnectException;
 import net.orbyfied.osf.util.logging.EventLog;
 import net.orbyfied.osf.util.logging.Logging;
@@ -16,6 +18,7 @@ import net.orbyfied.osf.util.security.SymmetricEncryptionProfile;
 
 import java.net.Socket;
 import java.util.HashSet;
+import java.util.concurrent.atomic.AtomicReference;
 
 public class ServerClient {
 
@@ -102,6 +105,13 @@ public class ServerClient {
         return this;
     }
 
+    public ServerClient disconnectWithMessage(String message) {
+        networkHandler.sendSync(new PacketUnboundDisconnect(message));
+        networkHandler.disconnect();
+        networkHandler.stop();
+        return this;
+    }
+
     /**
      * Remove and destroy this client.
      * @return This.
@@ -130,7 +140,7 @@ public class ServerClient {
     // be marked ready
     protected void readyClient() {
         // call event
-        server.eventBus().post(new ClientReadyEvent(server, this));
+        server.eventBus().post(new ServerClientReadyEvent(server, this));
     }
 
     // called when a job is completed
@@ -169,11 +179,18 @@ public class ServerClient {
         return clientSymmetricEncryption;
     }
 
+    // refuse the handshake by sending a stop packet immediately
+    protected void initRefuseSymmetricEncryptionHandshake() {
+        networkHandler.sendSync(new PacketUnboundHandshakeStop("Disabled"));
+    }
+
     // starts the process to establish
     // an encrypted connection
     protected void initSymmetricEncryptionHandshake() {
         // post mandatory job
         postReadyJob("encryption-handshake");
+
+        final AtomicReference<String> okMessage = new AtomicReference<>();
 
         // setup handler for client keys
         networkHandler.node().childForType(PacketServerboundClientKey.TYPE)
@@ -184,10 +201,29 @@ public class ServerClient {
                     log.ok("encrypted_connection",
                             "Established encrypted connection with {0}", this);
 
-                    // finish job
-                    finishReadyJob("encryption-handshake");
+                    //
 
                     // remove node and return
+                    return new HandlerResult(ChainAction.CONTINUE).nodeAction(NodeAction.REMOVE);
+                });
+
+        // handle verification
+        networkHandler.node().childForType(PacketUnboundVerifyEncryption.TYPE)
+                .<PacketUnboundVerifyEncryption>withHandler((handler, node, packet) -> {
+                    // check message against sent
+                    if (packet.getMessage().equals(okMessage.get() + /* modify a bit */ "-modified")) {
+                        log.ok("verify")
+
+                        // finish encryption
+                        finishReadyJob("encryption-handshake");
+                    } else {
+                        log.warn("verify_encryption", "AES verification failed for {0}", this);
+                        if (server.configuration.getOrDefaultFlat(Server.K_ENFORCE_ENCRYPTED, true)) {
+                            disconnectWithMessage("Encryption required");
+                        }
+
+                    }
+
                     return new HandlerResult(ChainAction.CONTINUE).nodeAction(NodeAction.REMOVE);
                 });
 

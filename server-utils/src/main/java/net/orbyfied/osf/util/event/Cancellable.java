@@ -1,4 +1,4 @@
-package net.orbyfied.osf.server.event;
+package net.orbyfied.osf.util.event;
 
 import java.util.HashSet;
 

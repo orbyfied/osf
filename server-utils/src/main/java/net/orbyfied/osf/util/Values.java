@@ -125,7 +125,7 @@ public class Values {
         return this;
     }
 
-    public Values put(String key, Object val) {
+    public Values put(Object key, Object val) {
         return setFlat(key, val);
     }
 

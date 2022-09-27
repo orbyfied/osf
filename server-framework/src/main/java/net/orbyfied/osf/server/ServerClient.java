@@ -198,8 +198,6 @@ public class ServerClient {
                     // set key and encryption profile
                     clientSymmetricEncryption.withKey("secret", packet.getKey());
                     networkHandler.withEncryptionProfile(clientSymmetricEncryption);
-                    log.ok("encrypted_connection",
-                            "Established encrypted connection with {0}", this);
 
                     //
 
@@ -212,7 +210,8 @@ public class ServerClient {
                 .<PacketUnboundVerifyEncryption>withHandler((handler, node, packet) -> {
                     // check message against sent
                     if (packet.getMessage().equals(okMessage.get() + /* modify a bit */ "-modified")) {
-                        log.ok("verify")
+                        log.ok("verify_encryption", "Established and verified AES encrypted " +
+                                "connection for {0}", this);
 
                         // finish encryption
                         finishReadyJob("encryption-handshake");
@@ -220,8 +219,10 @@ public class ServerClient {
                         log.warn("verify_encryption", "AES verification failed for {0}", this);
                         if (server.configuration.getOrDefaultFlat(Server.K_ENFORCE_ENCRYPTED, true)) {
                             disconnectWithMessage("Encryption required");
+                        } else {
+                            // finish encryption
+                            finishReadyJob("encryption-handshake");
                         }
-
                     }
 
                     return new HandlerResult(ChainAction.CONTINUE).nodeAction(NodeAction.REMOVE);

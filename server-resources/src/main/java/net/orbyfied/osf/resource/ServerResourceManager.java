@@ -54,10 +54,7 @@ public class ServerResourceManager {
 
     ///////////////////////////////////////////////////////////
 
-    public ServerResourceManager(String name) {
-        // set fields
-        this.name = name;
-
+    public ServerResourceManager() {
         // configure event bus
         eventBus.withDefaultPipelineFactory((bus, eventClass) -> Pipelines.mono(bus));
 
@@ -69,11 +66,10 @@ public class ServerResourceManager {
         withService(ResourceGCService::new);
     }
 
-    // the name of this resource manager
-    private final String name;
-
     // the database manager
     private DatabaseManager dbManager;
+    // database table name
+    private String tableName;
 
     // the loaded resource types
     private final Int2ObjectOpenHashMap<ServerResourceType> typesByHash = new Int2ObjectOpenHashMap<>();
@@ -142,6 +138,11 @@ public class ServerResourceManager {
     }
 
     /* ----- Databases ----- */
+
+    public ServerResourceManager withTableName(String tableName) {
+        this.tableName = tableName;
+        return this;
+    }
 
     public ServerResourceManager withDatabaseManager(DatabaseManager manager) {
         // set database manager
@@ -556,7 +557,7 @@ public class ServerResourceManager {
     }
 
     public String getCollectionName() {
-        return name + "_resources";
+        return tableName;
     }
 
     private MongoCollection<Document> mongoGetOrCreateResCollection(MongoDatabase mongoDatabase) {

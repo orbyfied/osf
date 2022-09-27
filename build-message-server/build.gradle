@@ -1,0 +1,28 @@
+plugins {
+    id 'java'
+    id 'java-library'
+
+    // for shading in dependencies
+    id "com.github.johnrengelman.shadow" version "7.1.2"
+}
+
+ext {
+    // enable testing
+    hasTests = true
+
+    // app
+    mainClass = "net.orbyfied.msgs.ServerMain"
+}
+
+// apply module preset
+apply from: '../buildSrc/module.gradle', to: project
+
+version '0.1.0'
+
+dependencies {
+    // projects
+    api project(":server-bootstrap-utils")
+
+    // libraries to include for testing
+    testImplementation 'org.mongodb:mongodb-driver:3.12.11'
+}

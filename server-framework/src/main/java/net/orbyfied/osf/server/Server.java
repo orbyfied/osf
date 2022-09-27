@@ -1,7 +1,11 @@
 package net.orbyfied.osf.server;
 
+import net.orbyfied.j8.event.BusEvent;
+import net.orbyfied.j8.event.BusHandler;
 import net.orbyfied.j8.event.ComplexEventBus;
 import net.orbyfied.j8.event.EventListener;
+import net.orbyfied.j8.event.pipeline.Handler;
+import net.orbyfied.j8.event.pipeline.impl.BasicPipeline;
 import net.orbyfied.j8.event.util.Pipelines;
 import net.orbyfied.osf.db.DatabaseManager;
 import net.orbyfied.osf.network.NetworkManager;
@@ -33,6 +37,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.BiFunction;
+import java.util.function.Consumer;
 import java.util.function.Function;
 
 /**
@@ -84,7 +89,8 @@ public abstract class Server
 
             this.networkManager  = new NetworkManager();
             this.databaseManager = new DatabaseManager();
-            this.resourceManager = new ServerResourceManager(name)
+            this.resourceManager = new ServerResourceManager()
+                    .withTableName(name + "-resources")
                     .withDatabaseManager(databaseManager);
         } catch (Exception e) {
             throw new ServerInitializeException("Exception in instantiation", e);
@@ -174,6 +180,11 @@ public abstract class Server
 
     public ComplexEventBus eventBus() {
         return eventBus;
+    }
+
+    @SuppressWarnings("unchecked")
+    public <E extends BusEvent> void on(Class<E> eClass, Consumer<E> consumer) {
+        ((BasicPipeline<E>)eventBus.getPipelineFor(eClass).base()).addLast(consumer::accept);
     }
 
     // if it should be running

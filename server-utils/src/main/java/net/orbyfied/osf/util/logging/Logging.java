@@ -1,4 +1,4 @@
-package net.orbyfied.osf.util;
+package net.orbyfied.osf.util.logging;
 
 import net.orbyfied.j8.util.logging.LogHandler;
 import net.orbyfied.j8.util.logging.LogText;
@@ -19,7 +19,15 @@ import java.util.Date;
 public class Logging {
 
     // the main logger group
-    private static final LoggerGroup GROUP = new LoggerGroup("Server");
+    private static final LoggerGroup GROUP = new LoggerGroup("OSF");
+    // the event logs
+    public static final EventLogs EVENT_LOGS = new EventLogs()
+            .withInitializer(log -> {
+                final Logger logger = getLogger(log.getName());
+                log.withHandler(new EventLogHandler("logger", event -> {
+                    log.logString(event, logger);
+                }));
+            });
 
     public static final PrintStream ERR;
     private static SafeWorker errWorker;
@@ -87,6 +95,14 @@ public class Logging {
         });
     }
 
+    public static void setLogEvents(boolean b) {
+        EVENT_LOGS.forAll(log -> {
+            EventLogHandler handler = log.getHandler("logger");
+            if (handler != null)
+                handler.setEnabled(b);
+        });
+    }
+
     /**
      * Get the main logger group.
      * @return The logger group.
@@ -108,6 +124,16 @@ public class Logging {
 
         logger = GROUP.create(name);
         return logger;
+    }
+
+    /**
+     * Gets an event log or creates a new
+     * one with the specified name.
+     * @param name The name.
+     * @return The logger.
+     */
+    public static EventLog getEventLog(String name) {
+        return EVENT_LOGS.getOrCreate(name);
     }
 
 }

@@ -1,7 +1,7 @@
 package net.orbyfied.osf.util.security;
 
 import net.orbyfied.j8.util.logging.Logger;
-import net.orbyfied.osf.util.Logging;
+import net.orbyfied.osf.util.logging.Logging;
 
 import javax.crypto.Cipher;
 import javax.crypto.NoSuchPaddingException;

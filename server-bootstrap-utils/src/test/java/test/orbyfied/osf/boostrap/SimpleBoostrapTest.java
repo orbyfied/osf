@@ -21,10 +21,10 @@ public class SimpleBoostrapTest {
         ServerBootstrap bootstrap = new ServerBootstrap();
         bootstrap
                 .useConsoleArguments(args)
-                .loadMainConfiguration("config.yml", SimpleBoostrapTest.class, "/config-defaults.yml")
+//                .loadMainConfiguration("config.yml", SimpleBoostrapTest.class, "/config-defaults.yml")
                 .withServer(MyServer::new)
                 .withDefaultPort(6969)
-                .withDefaultAddress(InetSocketAddress.createUnresolved("0.0.0.0", 6969))
+                .withDefaultAddress(new InetSocketAddress("0.0.0.0", 6969))
                 .bootstrap()
                 .awaitClose();
     }

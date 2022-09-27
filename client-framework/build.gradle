@@ -18,9 +18,6 @@ version '0.1.0'
 
 dependencies {
     // projects
-    api project(":bootstrap-utils")
     api project(":server-framework")
-
-    // libraries to include for testing
-    testImplementation 'org.mongodb:mongodb-driver:3.12.11'
+    api project(":bootstrap-utils")
 }

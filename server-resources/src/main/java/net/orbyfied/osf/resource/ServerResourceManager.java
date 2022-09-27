@@ -19,7 +19,8 @@ import net.orbyfied.j8.event.util.Pipelines;
 import net.orbyfied.j8.registry.Identifier;
 import net.orbyfied.j8.util.logging.Logger;
 import net.orbyfied.j8.util.reflect.Reflector;
-import net.orbyfied.osf.util.Logging;
+import net.orbyfied.osf.util.logging.EventLog;
+import net.orbyfied.osf.util.logging.Logging;
 import net.orbyfied.osf.util.Values;
 import org.bson.Document;
 import org.bson.conversions.Bson;
@@ -32,7 +33,7 @@ import java.util.function.BiConsumer;
 @SuppressWarnings("rawtypes")
 public class ServerResourceManager {
 
-    public static final Logger LOGGER = Logging.getLogger("ServerResources");
+    public static final EventLog LOGGER = Logging.getEventLog("ServerResources");
     private static final Reflector reflector = new Reflector("ServerResources");
 
     // a utility random instance for generating IDs

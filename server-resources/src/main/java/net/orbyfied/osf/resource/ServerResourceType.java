@@ -6,7 +6,8 @@ import net.orbyfied.j8.util.logging.Logger;
 import net.orbyfied.osf.db.Database;
 import net.orbyfied.osf.db.DatabaseItem;
 import net.orbyfied.osf.db.QueryPool;
-import net.orbyfied.osf.util.Logging;
+import net.orbyfied.osf.util.logging.EventLog;
+import net.orbyfied.osf.util.logging.Logging;
 import net.orbyfied.osf.util.Values;
 
 import java.lang.reflect.Constructor;
@@ -54,7 +55,7 @@ public abstract class ServerResourceType<R extends ServerResource> {
 
     /* ------------------------------------ */
 
-    protected static final Logger LOGGER = Logging.getLogger("ServerResource");
+    protected static final EventLog LOGGER = Logging.getEventLog("ServerResource");
 
     // a utility random instance for generating IDs
     protected static final Random RANDOM =
@@ -91,12 +92,15 @@ public abstract class ServerResourceType<R extends ServerResource> {
                 this.constructor = resourceClass.getDeclaredConstructor(UUID.class, ServerResourceType.class, UUID.class);
             }
         } catch (NoSuchMethodException e) {
-            LOGGER.err("No constructor (UUID, UUID) for resource type " + id + " (" + resourceClass.getName() + ")");
+            LOGGER.newErr("invalid_type", "No constructor (UUID, UUID) for resource type " + id + " (" + resourceClass.getName() + ")")
+                    .extra(v -> v.put("type", resourceClass)).push();
         } catch (InaccessibleObjectException e) {
-            LOGGER.err("Unable to access constructor (UUID, UUID) for resource type " + id + " (" + resourceClass.getName() + ")");
+            LOGGER.newErr("invalid_type", "Unable to access constructor (UUID, UUID) for resource type " + id + " (" + resourceClass.getName() + ")")
+                    .extra(v -> v.put("type", resourceClass)).push();
             e.printStackTrace(Logging.ERR);
         } catch (Exception e) {
-            LOGGER.err("Failed to get constructor (UUID, UUID) for resource type " + id + " (" + resourceClass.getName() + ")");
+            LOGGER.newErr("invalid_type", "Failed to get constructor (UUID, UUID) for resource type " + id + " (" + resourceClass.getName() + ")")
+                    .extra(v -> v.put("type", resourceClass)).push();
             e.printStackTrace(Logging.ERR);
         }
     }
@@ -262,7 +266,7 @@ public abstract class ServerResourceType<R extends ServerResource> {
     public ResourceSaveResult saveResourceSafe(ServerResourceManager manager,
                                                DatabaseItem dbItem,
                                                R resource) {
-        final Logger logger = ServerResourceManager.LOGGER;
+        final EventLog logger = ServerResourceManager.LOGGER;
 
         try {
             // call save
@@ -275,9 +279,8 @@ public abstract class ServerResourceType<R extends ServerResource> {
 
             return result;
         } catch (Exception e) {
-            logger.err("Error while saving resource " + resource.universalID() + " of type " +
-                    resource.type().id);
-            e.printStackTrace(Logging.ERR);
+            logger.newErr("resource save", e, "Error while saving resource " + resource.universalID() + " of type " +
+                    resource.type().id).extra(v -> v.put("resource_id", resource.universalID())).push();
             return new ResourceSaveResult(false, e);
         }
     }
@@ -289,7 +292,7 @@ public abstract class ServerResourceType<R extends ServerResource> {
     public ResourceLoadResult loadResourceSafe(ServerResourceManager manager,
                                                DatabaseItem dbItem,
                                                R resource) {
-        final Logger logger = ServerResourceManager.LOGGER;
+        final EventLog logger = ServerResourceManager.LOGGER;
 
         try {
             // pull data
@@ -298,9 +301,8 @@ public abstract class ServerResourceType<R extends ServerResource> {
             // call load and return
             return loadResource(manager, dbItem, resource);
         } catch (Exception e) {
-            logger.err("Error while loading resource " + resource.universalID() + " of type " +
-                    resource.type().id);
-            e.printStackTrace(Logging.ERR);
+            logger.newErr("resource_load", e, "Error while loading resource " + resource.universalID() + " of type " +
+                    resource.type().id).push();
             return new ResourceLoadResult(false, e);
         }
     }

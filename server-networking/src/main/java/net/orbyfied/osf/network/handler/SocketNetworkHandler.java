@@ -96,7 +96,7 @@ public class SocketNetworkHandler extends NetworkHandler<SocketNetworkHandler> {
             outputStream = new DataOutputStream(new BufferedOutputStream(socket.getOutputStream()));
         } catch (Exception e) {
             fatalClose();
-            LOGGER.err("Error while connecting to " + socket.getRemoteSocketAddress());
+            LOGGER.err("socket_connect", "Error while connecting to " + socket.getRemoteSocketAddress());
             e.printStackTrace();
         }
 

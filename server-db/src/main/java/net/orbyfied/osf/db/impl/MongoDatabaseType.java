@@ -11,6 +11,7 @@ import net.orbyfied.osf.db.Login;
 import net.orbyfied.j8.registry.Identifier;
 import net.orbyfied.j8.util.logging.Logger;
 import net.orbyfied.osf.util.Values;
+import net.orbyfied.osf.util.logging.EventLog;
 
 import java.util.logging.Level;
 
@@ -28,10 +29,10 @@ public class MongoDatabaseType extends DatabaseType<MongoDatabase> {
 
     @Override
     protected void login(MongoDatabase database, Login login) {
-        Logger logger = DatabaseManager.LOGGER;
+        EventLog logger = DatabaseManager.LOGGER;
 
         try {
-            logger.info("Logging in database '" + database.name() + "' of type " + ID);
+            logger.info("database_login", "Logging in database '" + database.name() + "' of type " + ID);
 
             if (!(login instanceof Login.URILogin))
                 throw new IllegalArgumentException("login must be a URILogin");
@@ -51,9 +52,9 @@ public class MongoDatabaseType extends DatabaseType<MongoDatabase> {
             // get database
             database.db = mongoClient.getDatabase(ul.getDatabase());
 
-            logger.ok("Successfully logged in database '" + database.name() + "'");
+            logger.ok("database_login", "Successfully logged in database '" + database.name() + "'");
         } catch (Exception e) {
-            logger.err("Error while logging in database '" + database.name() + "'", e);
+            logger.err("database_login", "Error while logging in database '" + database.name() + "'", e);
             e.printStackTrace();
         }
     }

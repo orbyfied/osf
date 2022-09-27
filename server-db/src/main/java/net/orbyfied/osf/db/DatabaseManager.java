@@ -2,7 +2,8 @@ package net.orbyfied.osf.db;
 
 import net.orbyfied.j8.registry.Identifier;
 import net.orbyfied.j8.util.logging.Logger;
-import net.orbyfied.osf.util.Logging;
+import net.orbyfied.osf.util.logging.EventLog;
+import net.orbyfied.osf.util.logging.Logging;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -17,7 +18,7 @@ import java.util.function.Consumer;
 @SuppressWarnings("rawtypes")
 public class DatabaseManager {
 
-    public static final Logger LOGGER = Logging.getLogger("Databases");
+    public static final EventLog LOGGER = Logging.getEventLog("Databases");
 
     // databases
     final ArrayList<Database>       db = new ArrayList<>();

@@ -4,7 +4,7 @@ import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
 import net.orbyfied.j8.registry.Identifier;
 import net.orbyfied.j8.util.logging.Logger;
 import net.orbyfied.j8.util.reflect.Reflector;
-import net.orbyfied.osf.util.Logging;
+import net.orbyfied.osf.util.logging.Logging;
 
 import java.lang.reflect.Field;
 import java.util.ArrayList;
@@ -15,17 +15,12 @@ public class NetworkManager {
 
     // utilities
     private static final Reflector reflector = new Reflector("NetworkManager");
-    private static final Logger LOGGER       = Logging.getLogger("NetworkManager");
 
     // the packet types by id
     // the key is the hash of the string identifier
     Int2ObjectOpenHashMap<PacketType<? extends Packet>> packetTypesById = new Int2ObjectOpenHashMap<>();
     // the packet types
     ArrayList<PacketType<? extends Packet>> packetTypes = new ArrayList<>();
-
-    public Logger getLogger() {
-        return LOGGER;
-    }
 
     public NetworkManager register(PacketType<? extends Packet> type) {
         packetTypesById.put(type.identifier().hashCode(), type);

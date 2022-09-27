@@ -2,7 +2,8 @@ package net.orbyfied.osf.network;
 
 import net.orbyfied.osf.network.handler.HandlerNode;
 import net.orbyfied.j8.util.logging.Logger;
-import net.orbyfied.osf.util.Logging;
+import net.orbyfied.osf.util.logging.EventLog;
+import net.orbyfied.osf.util.logging.Logging;
 
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -13,7 +14,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 @SuppressWarnings({"rawtypes", "unchecked"})
 public abstract class NetworkHandler<S extends NetworkHandler> {
 
-    protected static final Logger LOGGER = Logging.getLogger("NetworkHandler");
+    protected static final EventLog LOGGER = Logging.getEventLog("NetworkHandler");
 
     /**
      * The owner of this handler.
@@ -116,7 +117,7 @@ public abstract class NetworkHandler<S extends NetworkHandler> {
                 runSafe();
             } catch (Throwable t) {
                 fatalClose();
-                LOGGER.err(this.getName() + ": Error in socket worker network loop");
+                LOGGER.err("socket_worker_loop", this.getName() + ": Error in socket worker network loop");
                 t.printStackTrace();
             }
 

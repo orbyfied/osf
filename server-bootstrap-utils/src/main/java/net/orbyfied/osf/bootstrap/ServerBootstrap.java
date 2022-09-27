@@ -75,11 +75,11 @@ public class ServerBootstrap {
      */
 
     // the loaded configuration values
-    Values mainConfig;
+    Values mainConfig = new Values();
 
     public ServerBootstrap loadMainConfiguration(String file, Class<?> ref, String defaultResourceName) {
         try {
-            mainConfig = YamlConfig.copyDefaultsAndLoad(workDir.resolve(file), ref, defaultResourceName);
+            mainConfig.putAll(YamlConfig.copyDefaultsAndLoad(workDir.resolve(file), ref, defaultResourceName));
         } catch (Exception e) {
             throw new ServerBootstrapException("Error while loading main configuration\n" +
                     " [file: " + file + ", defaults: " + defaultResourceName + "]"
@@ -172,7 +172,7 @@ public class ServerBootstrap {
                 }
 
                 if (port != null)
-                    address = InetSocketAddress.createUnresolved(host, port);
+                    address = new InetSocketAddress(host, port);
             } else {
                 if (defaultAddress == null) {
                     throw new ServerBootstrapException("No host address was specified");

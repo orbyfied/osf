@@ -17,9 +17,11 @@ apply from: '../buildSrc/module.gradle', to: project
 version '0.1.0'
 
 dependencies {
+    // libraries
+    api 'org.yaml:snakeyaml:1.32'
+
     // projects
-    api project(":bootstrap-utils")
-    api project(":server-framework")
+    api project(":server-utils")
 
     // libraries to include for testing
     testImplementation 'org.mongodb:mongodb-driver:3.12.11'

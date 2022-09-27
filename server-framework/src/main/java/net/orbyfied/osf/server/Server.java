@@ -16,11 +16,11 @@ import net.orbyfied.osf.server.event.ServerPrepareEvent;
 import net.orbyfied.osf.server.event.ServerStopEvent;
 import net.orbyfied.osf.server.exception.ClientConnectException;
 import net.orbyfied.osf.server.exception.ServerInitializeException;
-import net.orbyfied.osf.util.Logging;
+import net.orbyfied.osf.util.logging.EventLog;
+import net.orbyfied.osf.util.logging.Logging;
 import net.orbyfied.osf.util.Values;
 import net.orbyfied.osf.util.Version;
 import net.orbyfied.osf.util.security.AsymmetricEncryptionProfile;
-import net.orbyfied.osf.util.security.SymmetricEncryptionProfile;
 import net.orbyfied.osf.util.worker.SafeWorker;
 
 import java.net.ServerSocket;
@@ -37,26 +37,14 @@ import java.util.function.Function;
  * required but it does help by providing
  * a kind of preset with various features,
  * including encryption.
+ *
+ * Base server class.
  */
 public abstract class Server
         /* registered to its own event bus */ implements EventListener {
 
-    public static final int RSA_KEY_LENGTH = 1024;
-    public static final int AES_KEY_LENGTH = 128;
-
-    public static AsymmetricEncryptionProfile newAsymmetricEncryptionProfile() {
-        return new AsymmetricEncryptionProfile("RSA", "ECB", "PKCS1Padding", "RSA", RSA_KEY_LENGTH);
-    }
-
-    public static SymmetricEncryptionProfile newSymmetricEncryptionProfile() {
-        return new SymmetricEncryptionProfile("AES", "ECB", "PKCS5Padding", "AES", AES_KEY_LENGTH);
-    }
-
-    public static final SymmetricEncryptionProfile  EP_SYMMETRIC  = newSymmetricEncryptionProfile();
-    public static final AsymmetricEncryptionProfile EP_ASYMMETRIC = newAsymmetricEncryptionProfile();
-
     // server logger
-    protected static final Logger logger = Logging.getLogger("Server");
+    protected static final EventLog logger = Logging.getEventLog("Server");
 
     /*
         Special, internal keys.
@@ -89,7 +77,7 @@ public abstract class Server
 
         // initialize core services
         try {
-            logger.info("Initializing core services");
+            logger.info("init_core_services", "Initializing core services");
 
             this.networkManager  = new NetworkManager();
             this.databaseManager = new DatabaseManager();
@@ -108,11 +96,11 @@ public abstract class Server
     private final String  name;
     private final Version version;
 
-    public String name() {
+    public String getName() {
         return name;
     }
 
-    public Version version() {
+    public Version getVersion() {
         return version;
     }
 
@@ -253,16 +241,16 @@ public abstract class Server
             spec.apply(networkManager);
         }
 
-        logger.ok("Loaded protocol consisting of " + protocolSpecifications.size() + " specifications");
+        logger.ok("load_protocol", "Loaded protocol consisting of " + protocolSpecifications.size() + " specifications");
 
         // bind socket
         try {
             serverSocket = new ServerSocket();
             serverSocket.bind(address);
 
-            logger.ok("Connected server socket on {0}", address);
+            logger.ok("server_socket_connect", "Connected server socket on {0}", address);
         } catch (Exception e) {
-            logger.err("Error while binding server socket to {0}", address);
+            logger.err("server_socket_connect", "Error while binding server socket to {0}", address);
             throw new ServerInitializeException("Connect: error while binding socket", e);
         }
 
@@ -275,13 +263,12 @@ public abstract class Server
         if (configuration.getOrDefaultFlat(K_ENABLE_ENCRYPTED, true)) {
             try {
                 // create encryption profile
-                rsaEncryptionProfile = newAsymmetricEncryptionProfile();
+                rsaEncryptionProfile = GeneralProtocolSpec.newAsymmetricEncryptionProfile();
 
                 // generate keys
                 rsaEncryptionProfile.generateKeys();
             } catch (Exception e) {
-                logger.err("Failed to enable RSA encryption");
-                e.printStackTrace();
+                logger.err("rsa_encryption", e, "Failed to enable RSA encryption");
                 throw new ServerInitializeException("Connect: error while enabling RSA encryption", e);
             }
         }
@@ -300,10 +287,10 @@ public abstract class Server
         eventBus.post(new ServerPostStartEvent(this));
 
         // create and run server socket worker
-        logger.info("Activating server socket");
+        logger.info("server_socket_worker", "Activating server socket");
         serverSocketWorker = new SafeWorker()
                 .withErrorHandler((safeWorker, throwable) -> {
-                    logger.err("Error in server socket worker, shutting down");
+                    logger.err("server_socket_worker", "Error in server socket worker, shutting down");
                     throwable.printStackTrace();
                     stop();
                 })
@@ -328,7 +315,7 @@ public abstract class Server
                 clientSocket = serverSocket.accept();
             } catch (Exception e) {
                 // log error and continue
-                logger.err("Error while accepting connections");
+                logger.err("server_socket_accept", e, "Error while accepting connections");
                 e.printStackTrace();
                 continue;
             }
@@ -351,15 +338,15 @@ public abstract class Server
                 eventBus.post(new ClientConnectEvent(this, client));
             } catch (ClientConnectException e) {
                 if ("connect".equals(e.getMessage())) {
-                    logger.err("Error connecting new client to socket {0}",
+                    logger.err("client_connect", e,"Error connecting new client to socket {0}",
                             ServerClient.formatSocketAddress(clientSocket));
                 } else {
-                    logger.err("Unknown error while connecting new client to socket {0}",
+                    logger.err("client_connect", e,"Unknown error while connecting new client to socket {0}",
                             ServerClient.formatSocketAddress(clientSocket));
                 }
             } catch (Exception e) {
                 // log error and continue
-                logger.err("Error while accepting client from {0}",
+                logger.err("client_connect", e,"Error while accepting client from {0}",
                         ServerClient.formatSocketAddress(clientSocket));
                 e.printStackTrace();
             }

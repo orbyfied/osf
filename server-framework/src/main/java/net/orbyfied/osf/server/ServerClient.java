@@ -5,11 +5,13 @@ import net.orbyfied.osf.network.handler.ChainAction;
 import net.orbyfied.osf.network.handler.HandlerResult;
 import net.orbyfied.osf.network.handler.NodeAction;
 import net.orbyfied.osf.network.handler.SocketNetworkHandler;
+import net.orbyfied.osf.server.common.GeneralProtocolSpec;
 import net.orbyfied.osf.server.common.protocol.handshake.PacketClientboundPubKey;
 import net.orbyfied.osf.server.common.protocol.handshake.PacketServerboundClientKey;
 import net.orbyfied.osf.server.event.ClientReadyEvent;
 import net.orbyfied.osf.server.exception.ClientConnectException;
-import net.orbyfied.osf.util.Logging;
+import net.orbyfied.osf.util.logging.EventLog;
+import net.orbyfied.osf.util.logging.Logging;
 import net.orbyfied.osf.util.security.SymmetricEncryptionProfile;
 
 import java.net.Socket;
@@ -21,7 +23,7 @@ public class ServerClient {
         return socket.getInetAddress() + ":" + socket.getPort();
     }
 
-    protected static final Logger logger = Logging.getLogger("ServerClient");
+    protected static final EventLog log = Logging.getEventLog("ServerClient");
 
     ///////////////////////////////////////////////
 
@@ -49,7 +51,7 @@ public class ServerClient {
                 .autoEncrypt(encrypt);
 
         if (encrypt)
-            clientSymmetricEncryption = Server.newSymmetricEncryptionProfile();
+            clientSymmetricEncryption = GeneralProtocolSpec.newSymmetricEncryptionProfile();
 
         // connect network handler
         try {
@@ -179,7 +181,8 @@ public class ServerClient {
                     // set key and encryption profile
                     clientSymmetricEncryption.withKey("secret", packet.getKey());
                     networkHandler.withEncryptionProfile(clientSymmetricEncryption);
-                    logger.ok("Established encrypted connection with {0}", this);
+                    log.ok("encrypted_connection",
+                            "Established encrypted connection with {0}", this);
 
                     // finish job
                     finishReadyJob("encryption-handshake");

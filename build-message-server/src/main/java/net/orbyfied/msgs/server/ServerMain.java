@@ -1,4 +1,4 @@
-package net.orbyfied.msgs;
+package net.orbyfied.msgs.server;
 
 public class ServerMain {
 

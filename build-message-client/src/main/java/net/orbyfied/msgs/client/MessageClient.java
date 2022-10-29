@@ -1,9 +1,17 @@
 package net.orbyfied.msgs.client;
 
 import net.orbyfied.j8.event.handler.BasicHandler;
+import net.orbyfied.msgs.common.Message;
+import net.orbyfied.msgs.common.protocol.MessagePacket;
+import net.orbyfied.msgs.common.protocol.MessageResponsePacket;
 import net.orbyfied.osf.client.Client;
 import net.orbyfied.osf.client.event.ClientReadyEvent;
+import net.orbyfied.osf.network.handler.ChainAction;
+import net.orbyfied.osf.network.handler.HandlerResult;
 import net.orbyfied.osf.util.Version;
+
+import javax.swing.*;
+import java.util.UUID;
 
 public class MessageClient extends Client {
 
@@ -31,7 +39,20 @@ public class MessageClient extends Client {
 
     @BasicHandler
     void clientReady(ClientReadyEvent event) {
+        clientNetworkHandler().node().childForType(MessagePacket.TYPE)
+                .<MessagePacket>withHandler((handler, node, packet) -> {
+                    Message message = packet.getMessage();
+                    api.handle(message);
+                    return new HandlerResult(ChainAction.CONTINUE);
+                });
 
+        clientNetworkHandler().node().childForType(MessageResponsePacket.TYPE)
+                .<MessageResponsePacket>withHandler((handler, node, packet) -> {
+                    UUID targetUuid  = packet.getTargetUUID();
+                    Message response = packet.getMessage();
+                    api.handleResponse(targetUuid, response);
+                    return new HandlerResult(ChainAction.CONTINUE);
+                });
     }
 
 }

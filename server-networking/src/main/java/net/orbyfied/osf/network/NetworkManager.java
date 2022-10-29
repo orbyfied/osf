@@ -4,6 +4,8 @@ import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
 import net.orbyfied.j8.registry.Identifier;
 import net.orbyfied.j8.util.logging.Logger;
 import net.orbyfied.j8.util.reflect.Reflector;
+import net.orbyfied.osf.network.handler.SocketNetworkHandler;
+import net.orbyfied.osf.network.protocol.Protocol;
 import net.orbyfied.osf.util.logging.Logging;
 
 import java.lang.reflect.Field;
@@ -11,6 +13,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+@SuppressWarnings("rawtypes")
 public class NetworkManager {
 
     // utilities
@@ -21,6 +24,29 @@ public class NetworkManager {
     Int2ObjectOpenHashMap<PacketType<? extends Packet>> packetTypesById = new Int2ObjectOpenHashMap<>();
     // the packet types
     ArrayList<PacketType<? extends Packet>> packetTypes = new ArrayList<>();
+
+    // the handlers
+    List<NetworkHandler> handlers = new ArrayList<>();
+
+    // the default protocol to use
+    Protocol defaultProtocol = Protocol.STANDARD;
+
+    public NetworkManager withDefaultProtocol(Protocol protocol) {
+        this.defaultProtocol = protocol;
+        return this;
+    }
+
+    public Protocol getDefaultProtocol() {
+        return defaultProtocol;
+    }
+
+    public <H extends NetworkHandler> H handler(H handler) {
+        handlers.add(handler);
+        if (handler instanceof SocketNetworkHandler sn)
+            if (sn.getProtocol() == null)
+                sn.withProtocol(defaultProtocol);
+        return handler;
+    }
 
     public NetworkManager register(PacketType<? extends Packet> type) {
         packetTypesById.put(type.identifier().hashCode(), type);

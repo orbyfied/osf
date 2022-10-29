@@ -14,6 +14,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 @SuppressWarnings({"rawtypes", "unchecked"})
 public abstract class NetworkHandler<S extends NetworkHandler> {
 
+    /** The event log. */
     protected static final EventLog LOGGER = Logging.getEventLog("NetworkHandler");
 
     /**
@@ -35,6 +36,13 @@ public abstract class NetworkHandler<S extends NetworkHandler> {
 
     private final S self;
 
+    /**
+     * Create a new network handler bound
+     * to a manager and optional parent.
+     * @param manager The network manager.
+     * @param parent The parent.
+     *               Null if none.
+     */
     public NetworkHandler(final NetworkManager manager,
                           final NetworkHandler parent) {
         this.manager = manager;
@@ -42,6 +50,11 @@ public abstract class NetworkHandler<S extends NetworkHandler> {
         this.self    = (S) this;
     }
 
+    /**
+     * Set the owner of this handler.
+     * @param owner The owner object.
+     * @return This.
+     */
     public S owned(Object owner) {
         this.owner = owner;
         return self;
@@ -55,10 +68,19 @@ public abstract class NetworkHandler<S extends NetworkHandler> {
         return node;
     }
 
+    /**
+     * Get the network manager.
+     * @return The manager.
+     */
     public NetworkManager manager() {
         return manager;
     }
 
+    /**
+     * Start this network handler.
+     * This will create and start the worker.
+     * @return This.
+     */
     public S start() {
         // create worker thread
         if (workerThread == null)
@@ -73,20 +95,37 @@ public abstract class NetworkHandler<S extends NetworkHandler> {
         return self;
     }
 
+    /**
+     * Deactivate the network handler.
+     * @return This.
+     */
     public S stop() {
         active.set(false);
         return self;
     }
 
-    public S fatalClose() {
+    /**
+     * Called when a fatal error occurs
+     * causing the handler to exit.
+     * @return This.
+     */
+    protected S fatalClose() {
         // doesnt do anything by default
         return self;
     }
 
+    /**
+     * Check if the handler is active.
+     * @return Boolean.
+     */
     public boolean active() {
         return active.get();
     }
 
+    /**
+     * Creates the worker thread.
+     * @return The worker.
+     */
     protected abstract WorkerThread createWorkerThread();
 
     /**
@@ -94,13 +133,14 @@ public abstract class NetworkHandler<S extends NetworkHandler> {
      * @param packet The packet.
      */
     protected void handle(Packet packet) {
+        // call handler node
+        if (this.node != null)
+            this.node.handle(this, packet);
+
         // call parent
         if (parent != null)
             parent.handle(packet);
     }
-
-    protected abstract boolean canHandleAsync(Packet packet);
-    protected abstract void scheduleHandleAsync(Packet packet);
 
     /* ---- Worker ---- */
 
@@ -117,7 +157,9 @@ public abstract class NetworkHandler<S extends NetworkHandler> {
                 runSafe();
             } catch (Throwable t) {
                 fatalClose();
-                LOGGER.err("socket_worker_loop", this.getName() + ": Error in socket worker network loop");
+                LOGGER.newErr("socket_worker_loop", this.getName() + ": Error in socket worker network loop")
+                        .withError(t)
+                        .push();
                 t.printStackTrace();
             }
 

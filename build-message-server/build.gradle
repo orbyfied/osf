@@ -11,7 +11,7 @@ ext {
     hasTests = true
 
     // app
-    mainClass = "net.orbyfied.msgs.ServerMain"
+    mainClass = "net.orbyfied.msgs.server.ServerMain"
 }
 
 // apply module preset

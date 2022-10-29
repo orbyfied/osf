@@ -8,19 +8,25 @@ import net.orbyfied.osf.util.data.DataBinary;
 
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.util.UUID;
 
 public class MessagePacket extends Packet {
 
     public static final PacketType<MessagePacket> TYPE =
             new PacketType<>(MessagePacket.class, "msgs/message")
             .serializer((type, packet, stream) -> {
-                stream.writeInt(packet.getMessage().getTypeHash());
-                DataBinary.writeValues(new ObjectOutputStream(stream), packet.getMessage().values());
+                Message message = packet.message;
+                UUID uuid = message.getUUID();
+                stream.writeLong(uuid.getMostSignificantBits());
+                stream.writeLong(uuid.getLeastSignificantBits());
+                stream.writeInt(message.getTypeHash());
+                DataBinary.writeValues(new ObjectOutputStream(stream), message.values());
             })
             .deserializer((type, stream) -> {
+                UUID uuid = new UUID(stream.readLong(), stream.readLong());
                 int typeHash = stream.readInt();
                 Values values = DataBinary.readValues(new ObjectInputStream(stream));
-                return new MessagePacket(new Message(typeHash).values(values));
+                return new MessagePacket(new Message(uuid, typeHash).values(values));
             });
 
     /////////////////////////////////////////////

@@ -9,9 +9,36 @@ boolean hasTest() {
     return hasProperty("hasTests") && project.hasTests == true
 }
 
+boolean hasPublishing() {
+    return plugins.hasPlugin("maven-publish") && plugins.hasPlugin("signing")
+}
+
+boolean isLibrary() {
+    return plugins.hasPlugin("java-library")
+}
+
 /*
     Task Configuration
  */
+
+java {
+    if (isLibrary()) {
+        withJavadocJar()
+        withSourcesJar()
+    }
+}
+
+if (isLibrary()) {
+    javadoc {
+        boolean verbose = false
+        if (project.hasProperty("jdVerbose"))
+            verbose = jdVerbose
+        options.outputLevel = verbose ? JavadocOutputLevel.VERBOSE : JavadocOutputLevel.QUIET
+        if (JavaVersion.current().isJava9Compatible()) {
+            options.addBooleanOption("html5", true)
+        }
+    }
+}
 
 tasks {
     compileJava {
@@ -38,6 +65,10 @@ tasks {
         String format = "osf-" + project.name + "+" + project.version + ".jar"
         outputFile = file("../builds/" + format)
     }
+}
+
+if (hasPublishing()) {
+    publish.dependsOn.add(tasks.jar)
 }
 
 /*
@@ -67,4 +98,86 @@ if (hasTest()) {
     test {
         useJUnitPlatform()
     }
+}
+
+// Publishing
+
+if (hasPublishing()) {
+
+    publishing {
+
+        publications {
+
+            mavenJava(MavenPublication) {
+
+                // publication properties
+                groupId    = project.group
+                artifactId = project.name
+
+                // include java code
+                from components.java
+
+                pom {
+                    // pom.xml properties
+                    name = project.name
+
+                    String descStr = null
+                    if (project.hasProperty("desc"))
+                        descStr = project.desc
+                    description = "OSF Module " + project.name + (descStr != null ? " - " + descStr : "")
+
+                    url = "https://github.com/orbyfied/osf"
+                    inceptionYear = "2022"
+
+                    // licensing
+                    licenses {
+                        license {
+                            name = "Apache License 2.0"
+                            url = "https://www.apache.org/licenses/LICENSE-2.0"
+                        }
+                    }
+
+                    // developers
+                    developers {
+                        developer {
+                            id = "orbyfied"
+                            name = "orbyfied"
+                            email = ""
+                        }
+                    }
+
+                    // SCM
+                    scm {
+                        connection = "scm:git:git:github.com/orbyfied/osf.git"
+                        developerConnection = "scm:git:ssh://github.com/orbyfied/osf.git"
+                        url = "https://github.com/orbyfied/osf.git"
+                    }
+
+
+                }
+
+            }
+
+        }
+
+        // publishing repositories
+        repositories {
+            // Maven Central
+            maven {
+                name = "OSSRH"
+                url = "https://s01.oss.sonatype.org/service/local/staging/deploy/maven2"
+                credentials {
+                    username = project.properties["ossrh.username"]
+                    password = project.properties["ossrh.password"]
+                }
+            }
+        }
+
+    }
+
+    // Publication Signing
+    signing {
+        sign publishing.publications.mavenJava
+    }
+
 }

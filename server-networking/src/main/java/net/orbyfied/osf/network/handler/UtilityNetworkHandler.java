@@ -31,25 +31,6 @@ public class UtilityNetworkHandler extends NetworkHandler<UtilityNetworkHandler>
         return new UtilityWorkerThread();
     }
 
-    @Override
-    protected void handle(Packet packet) {
-        super.handle(packet);
-
-        // call handler node
-        node.handle(this, packet);
-    }
-
-    @Override
-    protected boolean canHandleAsync(Packet packet) {
-        return true;
-    }
-
-    @Override
-    protected void scheduleHandleAsync(final Packet packet) {
-        // add task
-        schedule(() -> handle(packet));
-    }
-
     /*
         Tasks
      */

@@ -40,6 +40,10 @@ public class MessageHandler {
         this(type, newUUID(), action);
     }
 
+    public BiConsumer<MessageHandler, Message> getAction() {
+        return action;
+    }
+
     public MessageHandler register(MessageAPI api) {
         this.api = api;
         return this;

@@ -4,6 +4,10 @@ plugins {
 
     // for shading in dependencies
     id "com.github.johnrengelman.shadow" version "7.1.2"
+
+    // package publishing
+    id 'maven-publish'
+    id 'signing'
 }
 
 ext {
@@ -11,10 +15,10 @@ ext {
     hasTests = true
 }
 
+version '0.1.0'
+
 // apply module preset
 apply from: '../buildSrc/module.gradle', to: project
-
-version '0.1.0'
 
 dependencies {
     // projects

@@ -254,6 +254,10 @@ public abstract class EncryptionProfile<S extends EncryptionProfile> {
         public DataOutputStream toDataStream() {
             return new DataOutputStream(this);
         }
+
+        public ObjectOutputStream toObjectStream() throws IOException {
+            return new ObjectOutputStream(this);
+        }
     }
 
     /**
@@ -294,6 +298,10 @@ public abstract class EncryptionProfile<S extends EncryptionProfile> {
 
         public DataInputStream toDataStream() {
             return new DataInputStream(this);
+        }
+
+        public ObjectInputStream toObjectStream() throws IOException {
+            return new ObjectInputStream(this);
         }
     }
 

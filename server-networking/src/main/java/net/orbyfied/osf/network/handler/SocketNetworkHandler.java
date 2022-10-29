@@ -4,6 +4,7 @@ import net.orbyfied.osf.network.NetworkHandler;
 import net.orbyfied.osf.network.NetworkManager;
 import net.orbyfied.osf.network.Packet;
 import net.orbyfied.osf.network.PacketType;
+import net.orbyfied.osf.network.protocol.Protocol;
 import net.orbyfied.osf.util.security.EncryptionProfile;
 
 import java.io.*;
@@ -17,20 +18,25 @@ import java.util.function.Consumer;
  * Network handler for socket connections.
  * Bound to a socket will read, write and handle packets.
  */
-@SuppressWarnings({"unchecked", "rawtypes"})
+@SuppressWarnings({"rawtypes"})
 public class SocketNetworkHandler extends NetworkHandler<SocketNetworkHandler> {
 
     // async executor service
-    Executor executor = Executors.newSingleThreadExecutor();
+    static Executor executor = Executors.newFixedThreadPool(4);
 
     // the socket
     Socket socket;
     // the data streams
     DataInputStream  inputStream;
     DataOutputStream outputStream;
+    ObjectInputStream  objectInput;
+    ObjectOutputStream objectOutput;
 
     // disconnect handler
     Consumer<Throwable> disconnectHandler;
+
+    // the protocol
+    Protocol protocol;
 
     // decryption (and encryption) profile
     EncryptionProfile encryptionProfile;
@@ -40,14 +46,6 @@ public class SocketNetworkHandler extends NetworkHandler<SocketNetworkHandler> {
     public SocketNetworkHandler(final NetworkManager manager,
                                 final NetworkHandler parent) {
         super(manager, parent);
-    }
-
-    @Override
-    protected void handle(Packet packet) {
-        super.handle(packet);
-
-        // call handler node
-        this.node().handle(this, packet);
     }
 
     public SocketNetworkHandler withDisconnectHandler(Consumer<Throwable> consumer) {
@@ -60,19 +58,22 @@ public class SocketNetworkHandler extends NetworkHandler<SocketNetworkHandler> {
         return this;
     }
 
-    public synchronized SocketNetworkHandler autoEncrypt(boolean b) {
-        this.autoEncrypt = b;
+    public synchronized SocketNetworkHandler withProtocol(Protocol protocol) {
+        this.protocol = protocol;
         return this;
     }
 
-    @Override
-    protected boolean canHandleAsync(Packet packet) {
-        return false;
+    public Protocol getProtocol() {
+        return protocol;
     }
 
-    @Override
-    protected void scheduleHandleAsync(Packet packet) {
-        throw new UnsupportedOperationException();
+    public EncryptionProfile encryptionProfile() {
+        return encryptionProfile;
+    }
+
+    public synchronized SocketNetworkHandler autoEncrypt(boolean b) {
+        this.autoEncrypt = b;
+        return this;
     }
 
     @Override
@@ -94,6 +95,8 @@ public class SocketNetworkHandler extends NetworkHandler<SocketNetworkHandler> {
         try {
             inputStream  = new DataInputStream(new BufferedInputStream(socket.getInputStream()));
             outputStream = new DataOutputStream(new BufferedOutputStream(socket.getOutputStream()));
+            objectInput  = new ObjectInputStream(inputStream);
+            objectOutput = new ObjectOutputStream(outputStream);
         } catch (Exception e) {
             fatalClose();
             LOGGER.err("socket_connect", "Error while connecting to " + socket.getRemoteSocketAddress());
@@ -113,15 +116,14 @@ public class SocketNetworkHandler extends NetworkHandler<SocketNetworkHandler> {
 
     public SocketNetworkHandler sendSyncRaw(Packet packet) {
         try {
-            // write packet type
-            outputStream.writeByte(/* unencrypted */ 0);
-            outputStream.writeInt(packet.type().identifier().hashCode());
-
-            // serialize packet
-            packet.type().serializer().serialize(packet.type(), packet, outputStream);
-
-            // flush
-            outputStream.flush();
+            // call protocol write
+            protocol.getEffectivePacketCodec().write(
+                    this,
+                    protocol,
+                    packet,
+                    objectOutput,
+                    false
+            );
 
             // return
             return this;
@@ -155,25 +157,14 @@ public class SocketNetworkHandler extends NetworkHandler<SocketNetworkHandler> {
 
     public SocketNetworkHandler sendSyncEncrypted(Packet packet, EncryptionProfile encryption) {
         try {
-            // create output stream
-            ByteArrayOutputStream baos = new ByteArrayOutputStream();
-            DataOutputStream stream    = encryption.encryptingOutputStream(baos).toDataStream();
-
-            // serialize packet
-            packet.type().serializer().serialize(packet.type(), packet, stream);
-            stream.flush();
-
-            // write packet type unencrypted
-            outputStream.writeByte(/* encrypted */ 1);
-            outputStream.writeInt(packet.type().identifier().hashCode());
-
-            // get encrypted bytes and write
-            byte[] encrypted = baos.toByteArray();
-            outputStream.writeInt(encrypted.length); // write length
-            outputStream.write(encrypted);
-
-            // flush
-            outputStream.flush();
+            // call protocol write
+            protocol.getEffectivePacketCodec().write(
+                    this,
+                    protocol,
+                    packet,
+                    objectOutput,
+                    true
+            );
 
             // return
             return this;
@@ -219,46 +210,19 @@ public class SocketNetworkHandler extends NetworkHandler<SocketNetworkHandler> {
             try {
                 while (!socket.isClosed() && active.get()) {
                     // listen for incoming packets
-                    byte encryptedFlag   = inputStream.readByte();
-                    int packetTypeId = inputStream.readInt();
-                    // get packet type
-                    PacketType<? extends Packet> packetType =
-                            manager.getByHash(packetTypeId);
+                    Packet packet = protocol.getEffectivePacketCodec().read(
+                            SocketNetworkHandler.this,
+                            protocol,
+                            objectInput
+                    );
 
-//                    System.out.println("RECEIVED PACKET id-hash: " + packetTypeId + ", type: "
-//                            + (packetType != null ? packetType.identifier().toString() : "null"));
+                    // check for packet
+                    if (packet != null) {
+                        // handle packet
+                        SocketNetworkHandler.this.handle(packet);
 
-                    // handle packet
-                    if (packetType != null) {
                         // increment packet count
                         pC++;
-
-                        // prepare stream
-                        DataInputStream stream;
-                        if (encryptedFlag == 0) {
-                            // put unencrypted stream
-                            stream = inputStream;
-                        } else {
-                            // check for decryption profile
-                            if (encryptionProfile == null) {
-                                throw new IllegalArgumentException("can not decrypt encrypted packet, no decryption profile set");
-                            }
-
-                            // read encrypted bytes
-                            int dataLen = inputStream.readInt();
-                            byte[] encrypted = inputStream.readNBytes(dataLen);
-
-                            // create encrypted input stream
-                            ByteArrayInputStream bais = new ByteArrayInputStream(encrypted);
-                            stream = encryptionProfile.decryptingInputStream(bais).toDataStream();
-                        }
-
-                        // deserialize
-                        Packet packet = packetType.deserializer()
-                                .deserialize(packetType, stream);
-
-                        // handle
-                        SocketNetworkHandler.this.handle(packet);
                     }
                 }
             } catch (Throwable t1) {

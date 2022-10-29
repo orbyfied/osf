@@ -101,7 +101,9 @@ public class Client
         this.version = version;
 
         // create network handler
-        networkHandler = new SocketNetworkHandler(networkManager, null);
+        networkHandler = networkManager.handler(
+                new SocketNetworkHandler(networkManager, null)
+        );
     }
 
     public ComplexEventBus eventBus() {

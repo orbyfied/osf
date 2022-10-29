@@ -171,7 +171,7 @@ public abstract class Server
     // the client list instance factory
     protected Function<Server, ServerClientList> clientListFactory = ServerClientList::new;
     // the client instance factory
-    protected BiFunction<Server, Socket, ServerClient> clientInstanceFactory = (server, socket) -> new ServerClient(this, socket);
+    protected BiFunction<Server, Socket, ServerClient> clientInstanceFactory = ServerClient::new;
     // the clients connected to this server
     private ServerClientList clients;
 
@@ -340,6 +340,7 @@ public abstract class Server
             try {
                 // create client
                 client = clientInstanceFactory.apply(this, clientSocket);
+                networkManager.handler(client.networkHandler());
 
                 // register and start client
                 clients.add(client);

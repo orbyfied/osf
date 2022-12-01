@@ -89,4 +89,13 @@ public class MongoDatabaseItem extends DatabaseItem {
         return this;
     }
 
+    @Override
+    public boolean available() {
+        return document != null;
+    }
+
+    public Document document() {
+        return document;
+    }
+
 }

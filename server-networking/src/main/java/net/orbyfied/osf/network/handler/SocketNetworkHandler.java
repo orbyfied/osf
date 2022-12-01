@@ -5,6 +5,7 @@ import net.orbyfied.osf.network.NetworkManager;
 import net.orbyfied.osf.network.Packet;
 import net.orbyfied.osf.network.PacketType;
 import net.orbyfied.osf.network.protocol.Protocol;
+import net.orbyfied.osf.network.protocol.ProtocolInstance;
 import net.orbyfied.osf.util.security.EncryptionProfile;
 
 import java.io.*;
@@ -37,6 +38,8 @@ public class SocketNetworkHandler extends NetworkHandler<SocketNetworkHandler> {
 
     // the protocol
     Protocol protocol;
+    // the protocol instance
+    ProtocolInstance protocolInstance;
 
     // decryption (and encryption) profile
     EncryptionProfile encryptionProfile;
@@ -59,12 +62,19 @@ public class SocketNetworkHandler extends NetworkHandler<SocketNetworkHandler> {
     }
 
     public synchronized SocketNetworkHandler withProtocol(Protocol protocol) {
-        this.protocol = protocol;
+        if (protocolInstance != null)
+            protocol.destroyInstance(protocolInstance);
+        this.protocol         = protocol;
+        this.protocolInstance = protocol.getInstance(this);
         return this;
     }
 
     public Protocol getProtocol() {
         return protocol;
+    }
+
+    public ProtocolInstance getProtocolInstance() {
+        return protocolInstance;
     }
 
     public EncryptionProfile encryptionProfile() {
@@ -109,6 +119,14 @@ public class SocketNetworkHandler extends NetworkHandler<SocketNetworkHandler> {
     public SocketNetworkHandler disconnect() {
         // deactivate worker
         stop();
+
+        // return
+        return this;
+    }
+
+    public SocketNetworkHandler destroy() {
+        // destroy protocol instance
+        protocol.destroyInstance(protocolInstance);
 
         // return
         return this;

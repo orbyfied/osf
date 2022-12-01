@@ -44,6 +44,11 @@ public abstract class DatabaseItem {
      */
     public abstract <T> T get(String key, Class<T> type);
 
+    public <T> T get(String key, Class<T> type, T def) {
+        T v = get(key, type);
+        return v == null ? def : v;
+    }
+
     /**
      * Will update the data in the item in the database,
      * like pushing the changes into the database, hence
@@ -61,5 +66,13 @@ public abstract class DatabaseItem {
      * @return This or a copy.
      */
     public abstract DatabaseItem pull();
+
+    /**
+     * If the current item is available, this can
+     * be used to check the result of an operation like
+     * {@link DatabaseItem#pull()}.
+     * @return If it is available.
+     */
+    public abstract boolean available();
 
 }

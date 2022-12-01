@@ -21,9 +21,7 @@ version '0.1.1'
 apply from: '../buildSrc/module.gradle', to: project
 
 dependencies {
-    // libraries
-    compileOnlyApi 'org.mongodb:mongodb-driver:3.12.11'
-
     // projects
-    api project(":server-utils")
+    compileOnlyApi project(":server-framework")
+    compileOnlyApi project(":client-framework")
 }

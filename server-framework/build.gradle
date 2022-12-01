@@ -23,7 +23,5 @@ apply from: '../buildSrc/module.gradle', to: project
 dependencies {
     // projects
     api project(":server-utils")
-    api project(":server-resources")
     api project(":server-networking")
-    api project(":server-db")
 }

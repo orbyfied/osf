@@ -12,6 +12,7 @@ import java.io.ObjectOutputStream;
  * including things like packet ID, data, encryption, etc.
  * This is global to the protocol and not per packet.
  */
+@SuppressWarnings("rawtypes")
 public abstract class NetworkCodec {
 
     // the name of the codec

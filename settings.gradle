@@ -9,4 +9,6 @@ include 'client-framework'
 include 'bootstrap-utils'
 include 'build-message-server'
 include 'build-message-client'
+include 'server-services'
+include 'core-services'
 

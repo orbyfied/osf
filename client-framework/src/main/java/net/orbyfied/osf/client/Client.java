@@ -245,4 +245,8 @@ public class Client
         }
     }
 
+    public Values getConfiguration() {
+        return configuration;
+    }
+
 }

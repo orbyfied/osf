@@ -1,6 +1,6 @@
-package net.orbyfied.osf.service.communcation.impl;
+package net.orbyfied.osf.service.communication.impl;
 
-import net.orbyfied.osf.service.communcation.CommunicationAdapter;
+import net.orbyfied.osf.service.communication.CommunicationAdapter;
 
 public class RemoteFunctionImpl {
 

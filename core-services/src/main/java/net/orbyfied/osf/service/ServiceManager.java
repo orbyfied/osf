@@ -1,8 +1,6 @@
 package net.orbyfied.osf.service;
 
 import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
-import net.orbyfied.osf.service.communcation.CommunicationAdapter;
-import net.orbyfied.osf.service.communcation.CommunicationAdapterBuilder;
 
 import java.util.ArrayList;
 import java.util.List;

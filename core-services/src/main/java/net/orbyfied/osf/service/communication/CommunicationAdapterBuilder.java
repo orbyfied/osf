@@ -1,4 +1,4 @@
-package net.orbyfied.osf.service.communcation;
+package net.orbyfied.osf.service.communication;
 
 import net.orbyfied.osf.service.ServiceAdapterBuilder;
 

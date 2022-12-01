@@ -1,4 +1,4 @@
-package net.orbyfied.osf.service.communcation.api;
+package net.orbyfied.osf.service.communication.api;
 
 /**
  * A function which is communicated to the

@@ -1,9 +1,9 @@
-package net.orbyfied.osf.service.communcation;
+package net.orbyfied.osf.service.communication;
 
 import net.orbyfied.osf.service.ServiceAdapterProvider;
 import net.orbyfied.osf.service.ServiceManager;
 import net.orbyfied.osf.service.ServiceProvider;
-import net.orbyfied.osf.service.communcation.api.RemoteService;
+import net.orbyfied.osf.service.communication.api.RemoteService;
 
 public class CommunicationAdapterProvider extends ServiceAdapterProvider<CommunicationAdapter, CommunicationAdapterBuilder> {
 

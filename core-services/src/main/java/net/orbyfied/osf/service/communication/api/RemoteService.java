@@ -1,4 +1,4 @@
-package net.orbyfied.osf.service.communcation.api;
+package net.orbyfied.osf.service.communication.api;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
